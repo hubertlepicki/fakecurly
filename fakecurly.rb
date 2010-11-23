@@ -3,8 +3,5 @@ require 'bundler'
 Bundler.require
 
 class Fakecurly < Sinatra::Base
-  get "/" do
-    "Hello, world of sinatra"
-  end
 end
 
