@@ -11,6 +11,7 @@ RSpec.configure do |config|
   end
 
   config.before(:each) do
+    Fakecurly.clear
   end
 end
 
