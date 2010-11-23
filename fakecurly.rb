@@ -20,6 +20,11 @@ class Fakecurly < Sinatra::Base
     super
   end
 
+  get "/accounts/:code" do
+    @account = Fakecurly.accounts.select {|a| a["account_code"] == params["code"]}[0]
+    builder :accounts_show
+  end
+
   post "/accounts" do
     if params["account"] && params["account"]["account_code"].to_s != ""
       if Fakecurly.accounts.any? {|a| a["account_code"] == params["account"]["account_code"]}

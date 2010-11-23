@@ -120,7 +120,28 @@ BEGIN
 )
     end
        
-    it "should be possible to get individual account data"
+    it "should be possible to get individual account data" do
+      @app.get "/accounts/foo"
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<account>
+  <id>foo</id>
+  <account_code>foo</account_code>
+  <username></username>
+  <email>#{account_attributes[:email]}</email>
+  <first_name>#{account_attributes[:first_name]}</first_name>
+  <last_name>#{account_attributes[:last_name]}</last_name>
+  <company_name>#{account_attributes[:company_name]}</company_name>
+  <balance_in_cents type="integer">0</balance_in_cents>
+  <closed type="boolean">false</closed>
+  <hosted_login_token>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</hosted_login_token>
+  <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
+  <state>active</state>
+</account>
+BEGIN
+      )
+    end
   end
 
   context "billing info" do
