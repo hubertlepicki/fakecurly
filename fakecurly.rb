@@ -90,6 +90,51 @@ class Fakecurly < Sinatra::Base
     end
   end
 
+  post "/accounts/:code/subscription" do
+    @account = Fakecurly.accounts[params["code"]]
+    @subscription = params["subscription"] || {}
+    @errors = []
+
+    if @account
+      if @subscription["account"].nil? || @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["address1"].nil?
+        @errors << ["billing_info.address1", "Billing info.address1 can't be empty"]
+      end
+      if @subscription["account"].nil? || @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["address1"].nil?
+        @errors << ["billing_info.zip", "Billing info.zip can't be empty"]
+      end
+      if @subscription["account"].nil? || @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["address1"].nil?
+        @errors << ["billing_info.city", "Billing info.city can't be empty"]
+      end
+      if @subscription["account"].nil? || @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["address1"].nil?
+        @errors << ["billing_info.country", "Billing info.country can't be empty"]
+      end
+
+      if @subscription["account"]  && @errors.empty?
+        if @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["credit_card"].nil? || @subscription["account"]["billing_info"]["credit_card"]["number"].to_s == "" || @subscription["account"]["billing_info"]["credit_card"]["number"].to_i != 1
+          @errors << ["billing_info.number", "Billing info.number is not a valid number"]
+        end
+
+        @errors << ["billing_info.first_name", "Billing info.first_name can't be blank"] if @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["first_name"].nil?
+        @errors << ["billing_info.last_name", "Billing info.last_name can't be blank"] if @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["last_name"].nil?
+      end
+
+
+      if @errors.empty? 
+        builder :subscriptions_show
+      else
+        builder :errors
+      end
+    else
+      not_found(builder :accounts_404)
+    end
+  end
+
+  get "/accounts/:code/subscription" do
+    @account = Fakecurly.accounts[params["code"]]
+    @subscription = Fakecurly.subscriptions[params["code"]]
+    not_found(builder :subscriptions_404) if @account.nil? || @subscription.nil? 
+  end
+
   get "/company/plans" do
     @plans = Fakecurly.plans.values
     builder :plans_index

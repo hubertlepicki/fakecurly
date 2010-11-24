@@ -30,6 +30,41 @@ describe Fakecurly do
     }.merge(custom_attributes)
   end
 
+  def subscription_attributes(custom_attributes = {})
+    {
+      plan_code: "plan1",
+      account: account_attributes(
+         billing_info: billing_info_attributes
+       )
+    }.merge(custom_attributes)
+  end
+
+  before :each do
+    Fakecurly.plans = {
+      "plan1" => {
+        "plan_code" => "plan1",
+        "name" => "Plan 1",
+        "description" => "First plan",
+        "unit_amount_in_cents" => 100,
+        "setup_fee_in_cents" => 0,
+        "plan_interval_length" => 1,
+        "plan_interval_unit" => "months",
+        "trial_interval_length" => 1,
+        "trial_interval_unit" => "months"
+      },
+      "plan2" => {
+        "plan_code" => "plan2",
+        "name" => "Plan 2",
+        "description" => "Second plan",
+        "unit_amount_in_cents" => 200,
+        "setup_fee_in_cents" => 0,
+        "plan_interval_length" => 1,
+        "plan_interval_unit" => "months",
+        "trial_interval_length" => 0,
+        "trial_interval_unit" => "months"
+      }
+    }
+  end
 
   context "clearing" do
     before :each do
@@ -330,32 +365,6 @@ BEGIN
   end
 
   context "subscription plans" do
-    before :each do
-      Fakecurly.plans = {
-        "plan1" => {
-          "plan_code" => "plan1",
-          "name" => "Plan 1",
-          "description" => "First plan",
-          "unit_amount_in_cents" => 100,
-          "setup_fee_in_cents" => 0,
-          "plan_interval_length" => 1,
-          "plan_interval_unit" => "months",
-          "trial_interval_length" => 1,
-          "trial_interval_unit" => "months"
-        },
-        "plan2" => {
-          "plan_code" => "plan2",
-          "name" => "Plan 2",
-          "description" => "Second plan",
-          "unit_amount_in_cents" => 200,
-          "setup_fee_in_cents" => 0,
-          "plan_interval_length" => 1,
-          "plan_interval_unit" => "months",
-          "trial_interval_length" => 0,
-          "trial_interval_unit" => "months"
-        }
-      }
-    end
 
     it "should list all subscription plans that we defined" do
       @app.get "/company/plans"
@@ -411,12 +420,83 @@ BEGIN
 BEGIN
       )
     end
-
-    it "should get subscription plans information"
   end
 
   context "subscriptions" do
-    it "should be possible to create subscription for account"
+    before :each do
+      @app.request "/accounts", method: :post, params: {account: account_attributes}
+    end
+
+    it "should raise error when you try to create subscription without billing info" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: nil})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.address1">Billing info.address1 can't be empty</error>
+  <error field="billing_info.zip">Billing info.zip can't be empty</error>
+  <error field="billing_info.city">Billing info.city can't be empty</error>
+  <error field="billing_info.country">Billing info.country can't be empty</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should raise error when you try to create subscription without card info" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.number">Billing info.number is not a valid number</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should raise error when you try to create subscription without name info" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(first_name: nil, last_name: nil)})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.first_name">Billing info.first_name can't be blank</error>
+  <error field="billing_info.last_name">Billing info.last_name can't be blank</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should raise error when you try to create subscription without card info" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.number">Billing info.number is not a valid number</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should return 404 when subscription is not found" do
+      @app.get "/accounts/#{account_attributes[:account_code]}/subscription"
+      @app.last_response.status.should eql(404)
+    end
+
+    it "should return message when subscription is not found" do
+      @app.get "/accounts/#{account_attributes[:account_code]}/subscription"
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error>Subscription not found</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should be possible to create subscription for account" 
     it "should get a subscription for account"
     it "should be possible to update subscription for account"
     it "should be possible to cancel subscription"
