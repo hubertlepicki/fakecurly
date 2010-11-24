@@ -13,7 +13,7 @@ xml.billing_info do
   xml.vat_number @billing_info["vat_number"]
   xml.ip_address @billing_info["ip_address"]
   xml.credit_card do
-    xml.type "bogus"
+    xml.type @billing_info["credit_card"]["number"] == "1" ? "bogus" : "unknown"
     xml.last_four @billing_info["credit_card"]["number"].to_s[-4..-1]
     xml.month @billing_info["credit_card"]["month"], type: "integer"
     xml.year @billing_info["credit_card"]["year"], type: "integer"

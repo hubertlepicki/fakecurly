@@ -22,26 +22,6 @@ class Fakecurly < Sinatra::Base
     super
   end
 
-  put "/accounts/:code/billing_info" do
-    @account = Fakecurly.accounts[params["code"]]
-    if @account
-      @billing_info = Fakecurly.billing_infos[@account["account_code"]] = params[:billing_info]
-      @errors = []
-      if @billing_info["credit_card"].nil? || @billing_info["credit_card"]["number"].to_s == "" || @billing_info["credit_card"]["number"].to_i != 1
-        @errors << ["number", "Number is not a valid number"]
-      end
-      @errors << ["first_name", "First name can't be blank"] if @billing_info["first_name"].nil?
-      @errors << ["last_name", "Last name can't be blank"] if @billing_info["first_name"].nil?
-      if !@errors.empty?
-        builder :errors
-      else
-        builder :billing_infos_show
-      end
-    else
-      not_found(builder :accounts_404)
-    end
-  end
-
   get "/accounts/:code" do
     @account = Fakecurly.accounts[params["code"]]
     if @account
@@ -70,6 +50,46 @@ class Fakecurly < Sinatra::Base
     @accounts = Fakecurly.accounts.values
     builder :accounts_index
   end
+
+  put "/accounts/:code/billing_info" do
+    @account = Fakecurly.accounts[params["code"]]
+    if @account
+      @billing_info = Fakecurly.billing_infos[@account["account_code"]] = params[:billing_info]
+      @errors = []
+      if @billing_info["credit_card"].nil? || @billing_info["credit_card"]["number"].to_s == "" || @billing_info["credit_card"]["number"].to_i != 1
+        @errors << ["number", "Number is not a valid number"]
+      end
+      @errors << ["first_name", "First name can't be blank"] if @billing_info["first_name"].nil?
+      @errors << ["last_name", "Last name can't be blank"] if @billing_info["first_name"].nil?
+      if !@errors.empty?
+        builder :errors
+      else
+        builder :billing_infos_show
+      end
+    else
+      not_found(builder :accounts_404)
+    end
+  end
+
+  get "/accounts/:code/billing_info" do
+    @account = Fakecurly.accounts[params["code"]]
+    if @account
+      @billing_info = Fakecurly.billing_infos[@account["account_code"]]
+      @billing_info ||= {
+        "first_name" => @account["first_name"],
+        "last_name" => @account["last_name"],
+        "credit_card" => {
+           "month" => Time.now.month,
+           "year" => Time.now.year 
+         }
+      }
+
+      builder :billing_infos_show
+    else
+      not_found(builder :accounts_404)
+    end
+  end
+
 
 end
 
