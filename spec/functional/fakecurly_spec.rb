@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'spec_helper'
 
 describe Fakecurly do
@@ -9,11 +10,33 @@ describe Fakecurly do
       company_name: "AmberBit" }.merge(custom_attributes)
   end
 
+  def billing_info_attributes(custom_attributes = {})
+    { first_name: "John",
+      last_name: "Doe",
+      address1: "Some address",
+      address2: "cnt",
+      city: "Bialystok",
+      state: "Podlaskie",
+      country: "Polska",
+      zio: "15-444",
+      phone: "444444444",
+      vat_number: "3333333333",
+      ip_address: "127.0.0.1",
+      credit_card: {
+        number: 1,
+        month: 11,
+        year: 2011
+      }
+    }.merge(custom_attributes)
+  end
+
+
   context "clearing" do
     before :each do
-      Fakecurly.accounts = ["Something"]
-      Fakecurly.plans = ["Else"]
-      Fakecurly.subscriptions = ["Foo"]
+      Fakecurly.accounts = {"foo" => "bar"}
+      Fakecurly.billing_infos = {"foo" => "bar"}
+      Fakecurly.plans = {"foo" => "bar"}
+      Fakecurly.subscriptions = {"foo" => "bar"}
       Fakecurly.clear
     end
 
@@ -28,6 +51,11 @@ describe Fakecurly do
     it "should clear accounts" do
       Fakecurly.plans.should be_empty
     end
+
+    it "should clear billing infos" do
+      Fakecurly.billing_infos.should be_empty
+    end
+ 
   end
 
   context "creating accounts" do
@@ -142,14 +170,90 @@ BEGIN
 BEGIN
       )
     end
+
+    it "should return 404 when not found an account" do
+      @app.get "/accounts/nonexistent"
+      @app.last_response.status.should eql(404)
+    end
+
+    it "should return error message when not found an account" do
+      @app.get "/accounts/nonexistent"
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error>Account not found</error>
+</errors>
+BEGIN
+    )
+  end
+end
+
+context "billing info" do
+  before :each do
+    @app.request "/accounts", method: :post, params: {account: account_attributes}
   end
 
-  context "billing info" do
-    it "should be possible to create a billing info for account"
+  it "should be possible to create a billing info for account" do
+    @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes}      
+    @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<billing_info>
+  <account_code>#{account_attributes[:account_code]}</account_code>
+  <first_name>#{billing_info_attributes[:first_name]}</first_name>
+  <last_name>#{billing_info_attributes[:last_name]}</last_name>
+  <address1>#{billing_info_attributes[:address1]}</address1>
+  <address2>#{billing_info_attributes[:address2]}</address2>
+  <city>#{billing_info_attributes[:city]}</city>
+  <state>#{billing_info_attributes[:state]}</state>
+  <country>#{billing_info_attributes[:country]}</country>
+  <zip>#{billing_info_attributes[:zip]}</zip>
+  <phone>#{billing_info_attributes[:phone]}</phone>
+  <vat_number>#{billing_info_attributes[:vat_number]}</vat_number>
+  <ip_address>#{billing_info_attributes[:ip_address]}</ip_address>
+  <credit_card>
+    <type>bogus</type>
+    <last_four>#{billing_info_attributes[:credit_card][:ip_address]}</last_four>
+    <month type="integer">#{billing_info_attributes[:credit_card][:month]}</month>
+    <year type="integer">#{billing_info_attributes[:credit_card][:year]}</year>
+  </credit_card>
+  <updated_at type="datetime">2010-01-01T00:00:00-00:00</updated_at>
+</billing_info>
+BEGIN
+      )
+    end
 
-    it "should be possible to update billing info for account"
+    it "should return 404 when trying to update billing inf for non-existent account" do
+      @app.request "/accounts/nonexistent/billing_info", method: :put, params: {billing_info: billing_info_attributes}
+      @app.last_response.status.should eql(404)
+    end
 
-    it "should check required fields when billing info provided"
+    it "should return 404 when trying to update billing inf for non-existent account" do
+      @app.request "/accounts/nonexistent/billing_info", method: :put, params: {billing_info: billing_info_attributes}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error>Account not found</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should check required fields when billing info provided" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes(first_name: nil, last_name: nil, credit_card: {number: nil})}      
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="number">Number is not a valid number</error>
+  <error field="first_name">First name can't be blank</error>
+  <error field="last_name">Last name can't be blank</error>
+</errors>
+BEGIN
+      )
+    end
 
     it "should check if credit card number is 1 when billing info provided"
 
