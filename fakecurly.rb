@@ -118,9 +118,8 @@ class Fakecurly < Sinatra::Base
         @errors << ["billing_info.last_name", "Billing info.last_name can't be blank"] if @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["last_name"].nil?
       end
 
-
       if @errors.empty? 
-        builder :subscriptions_show
+        builder :subscriptions_create
       else
         builder :errors
       end

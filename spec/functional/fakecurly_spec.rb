@@ -496,6 +496,44 @@ BEGIN
       )
     end
 
+    it "should create subscription" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0"?>
+<subscription>
+  <plan_code>plan1</plan_code>
+  <quantity>1</quantity>
+  <account>
+    <account_code>#{account_attributes[:account_code]}</account_code>
+    <username></username>
+    <email>#{account_attributes[:email]}</email>
+    <first_name>#{account_attributes[:first_name]}</first_name>
+    <last_name>#{account_attributes[:last_name]}</last_name>
+    <company_name>#{account_attributes[:company_name]}</company_name>
+    <billing_info>
+      <first_name>#{billing_info_attributes[:first_name]}</first_name>
+      <last_name>#{billing_info_attributes[:last_name]}</last_name>
+      <address1>#{billing_info_attributes[:address1]}</address1>
+      <address2>#{billing_info_attributes[:address2]}</address2>
+      <city>#{billing_info_attributes[:city]}</city>
+      <state>#{billing_info_attributes[:state]}</state>
+      <zip>#{billing_info_attributes[:zip]}</zip>
+      <country>#{billing_info_attributes[:country]}</country>
+      <ip_address>#{billing_info_attributes[:ip_address]}</ip_address>
+      <credit_card>
+        <number>#{billing_info_attributes[:credit_card][:number]}</number>
+        <verification_value></verification_value>
+        <year>#{billing_info_attributes[:credit_card][:year]}</year>
+        <month>#{billing_info_attributes[:credit_card][:month]}</month>
+      </credit_card>
+    </billing_info>
+  </account>
+</subscription>
+BEGIN
+      )
+    end
+
     it "should be possible to create subscription for account" 
     it "should get a subscription for account"
     it "should be possible to update subscription for account"
