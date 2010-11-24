@@ -90,6 +90,10 @@ class Fakecurly < Sinatra::Base
     end
   end
 
+  get "/company/plans" do
+    @plans = Fakecurly.plans.values
+    builder :plans_index
+  end
 
 end
 

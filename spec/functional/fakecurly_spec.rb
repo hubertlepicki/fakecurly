@@ -330,7 +330,87 @@ BEGIN
   end
 
   context "subscription plans" do
-    it "should list all subscription plans that we defined"
+    before :each do
+      Fakecurly.plans = {
+        "plan1" => {
+          "plan_code" => "plan1",
+          "name" => "Plan 1",
+          "description" => "First plan",
+          "unit_amount_in_cents" => 100,
+          "setup_fee_in_cents" => 0,
+          "plan_interval_length" => 1,
+          "plan_interval_unit" => "months",
+          "trial_interval_length" => 1,
+          "trial_interval_unit" => "months"
+        },
+        "plan2" => {
+          "plan_code" => "plan2",
+          "name" => "Plan 2",
+          "description" => "Second plan",
+          "unit_amount_in_cents" => 200,
+          "setup_fee_in_cents" => 0,
+          "plan_interval_length" => 1,
+          "plan_interval_unit" => "months",
+          "trial_interval_length" => 0,
+          "trial_interval_unit" => "months"
+        }
+      }
+    end
+
+    it "should list all subscription plans that we defined" do
+      @app.get "/company/plans"
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<plans type="array">
+  <plan>
+    <plan_code>plan1</plan_code>
+    <name>Plan 1</name>
+    <description>First plan</description>
+    <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
+    <unit_amount_in_cents type="integer">100</unit_amount_in_cents>
+    <setup_fee_in_cents type="integer">0</setup_fee_in_cents>
+    <plan_interval_length type="integer">1</plan_interval_length>
+    <plan_interval_unit>months</plan_interval_unit>
+    <trial_interval_length type="integer">1</trial_interval_length>
+    <trial_interval_unit>months</trial_interval_unit>
+    <latest_version depreciated="true">
+      <version type="integer">1</version>
+      <unit_amount_in_cents type="integer">100</unit_amount_in_cents>
+      <setup_fee_in_cents type="integer">0</setup_fee_in_cents>
+      <plan_interval_length type="integer">1</plan_interval_length>
+      <plan_interval_unit>months</plan_interval_unit>
+      <trial_interval_length type="integer">1</trial_interval_length>
+      <trial_interval_unit>months</trial_interval_unit>
+      <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
+    </latest_version>
+  </plan>
+  <plan>
+    <plan_code>plan2</plan_code>
+    <name>Plan 2</name>
+    <description>Second plan</description>
+    <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
+    <unit_amount_in_cents type="integer">200</unit_amount_in_cents>
+    <setup_fee_in_cents type="integer">0</setup_fee_in_cents>
+    <plan_interval_length type="integer">1</plan_interval_length>
+    <plan_interval_unit>months</plan_interval_unit>
+    <trial_interval_length type="integer">0</trial_interval_length>
+    <trial_interval_unit>months</trial_interval_unit>
+    <latest_version depreciated="true">
+      <version type="integer">1</version>
+      <unit_amount_in_cents type="integer">200</unit_amount_in_cents>
+      <setup_fee_in_cents type="integer">0</setup_fee_in_cents>
+      <plan_interval_length type="integer">1</plan_interval_length>
+      <plan_interval_unit>months</plan_interval_unit>
+      <trial_interval_length type="integer">0</trial_interval_length>
+      <trial_interval_unit>months</trial_interval_unit>
+      <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
+    </latest_version>
+  </plan>
+</plans>
+BEGIN
+      )
+    end
 
     it "should get subscription plans information"
   end
