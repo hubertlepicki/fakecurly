@@ -22,7 +22,7 @@ class Fakecurly < Sinatra::Base
     super
   end
 
-  get "/accounts/:code" do
+  get "/accounts/:code.xml" do
     @account = Fakecurly.accounts[params["code"]]
     if @account
       builder :accounts_show
@@ -31,7 +31,8 @@ class Fakecurly < Sinatra::Base
     end
   end
 
-  post "/accounts" do
+  post "/accounts.xml" do
+    puts params.inspect
     if params["account"] && params["account"]["account_code"].to_s != ""
       if Fakecurly.accounts[params["account"]["account_code"]]
         @errors = [["account_code", "Account code has already been taken"]]
@@ -39,19 +40,23 @@ class Fakecurly < Sinatra::Base
       end
       @account = params["account"]
       Fakecurly.accounts[@account["account_code"]] = @account
+      puts "created"
       builder :accounts_create
     else
       @errors = [["account_code", "Account code can't be blank"], ["account_code", "Account code is invalid"]]
+      puts "errors.."
       builder :errors
     end
   end
 
-  get "/accounts" do
+  get "/accounts.xml" do
+
+    puts Fakecurly.accounts.inspect
     @accounts = Fakecurly.accounts.values
     builder :accounts_index
   end
 
-  put "/accounts/:code/billing_info" do
+  put "/accounts/:code/billing_info.xml" do
     @account = Fakecurly.accounts[params["code"]]
     if @account
       @billing_info = Fakecurly.billing_infos[@account["account_code"]] = params[:billing_info]
@@ -71,7 +76,7 @@ class Fakecurly < Sinatra::Base
     end
   end
 
-  get "/accounts/:code/billing_info" do
+  get "/accounts/:code/billing_info.xml" do
     @account = Fakecurly.accounts[params["code"]]
     if @account
       @billing_info = Fakecurly.billing_infos[@account["account_code"]]
@@ -90,7 +95,7 @@ class Fakecurly < Sinatra::Base
     end
   end
 
-  post "/accounts/:code/subscription" do
+  post "/accounts/:code/subscription.xml" do
     @account = Fakecurly.accounts[params["code"]]
     @subscription = params["subscription"] || {}
     @errors = []
@@ -128,16 +133,15 @@ class Fakecurly < Sinatra::Base
     end
   end
 
-  get "/accounts/:code/subscription" do
+  get "/accounts/:code/subscription.xml" do
     @account = Fakecurly.accounts[params["code"]]
     @subscription = Fakecurly.subscriptions[params["code"]]
     not_found(builder :subscriptions_404) if @account.nil? || @subscription.nil? 
   end
 
-  get "/company/plans" do
+  get "/company/plans.xml" do
     @plans = Fakecurly.plans.values
     builder :plans_index
   end
-
 end
 

@@ -95,12 +95,12 @@ describe Fakecurly do
 
   context "creating accounts" do
     it "should be possible to create account with valid attributes" do
-      @app.request "/accounts", method: :post, params: {account: account_attributes}
+      @app.request "/accounts.xml", method: :post, params: {account: account_attributes}
       Fakecurly.accounts.count.should eql(1)
     end
 
     it "should return account info when created account" do
-      @app.request "/accounts", method: :post, params: {account: account_attributes}
+      @app.request "/accounts.xml", method: :post, params: {account: account_attributes}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0"?>
@@ -117,7 +117,7 @@ BEGIN
     end
 
     it "should require valid attributes when creating account" do
-       @app.request "/accounts", method: :post, params: {account: account_attributes(account_code: nil)}
+       @app.request "/accounts.xml", method: :post, params: {account: account_attributes(account_code: nil)}
 
        @app.last_response.body.should eql(
 <<BEGIN
@@ -131,7 +131,7 @@ BEGIN
     end
 
     it "should require valid attributes when creating account" do
-       @app.request "/accounts", method: :post, params: {account: account_attributes(account_code: nil)}
+       @app.request "/accounts.xml", method: :post, params: {account: account_attributes(account_code: nil)}
 
        @app.last_response.body.should eql(
 <<BEGIN
@@ -147,12 +147,12 @@ BEGIN
 
   context "account information" do
     before :each do
-      @app.request "/accounts", method: :post, params: {account: account_attributes(account_code: "foo")}
-      @app.request "/accounts", method: :post, params: {account: account_attributes(account_code: "bar")}
+      @app.request "/accounts.xml", method: :post, params: {account: account_attributes(account_code: "foo")}
+      @app.request "/accounts.xml", method: :post, params: {account: account_attributes(account_code: "bar")}
     end
 
     it "should be possible to list accounts" do
-      @app.get "/accounts"
+      @app.get "/accounts.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -184,7 +184,7 @@ BEGIN
     end
        
     it "should be possible to get individual account data" do
-      @app.get "/accounts/foo"
+      @app.get "/accounts/foo.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -207,12 +207,12 @@ BEGIN
     end
 
     it "should return 404 when not found an account" do
-      @app.get "/accounts/nonexistent"
+      @app.get "/accounts/nonexistent.xml"
       @app.last_response.status.should eql(404)
     end
 
     it "should return error message when not found an account" do
-      @app.get "/accounts/nonexistent"
+      @app.get "/accounts/nonexistent.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -226,11 +226,11 @@ end
 
 context "billing info" do
   before :each do
-    @app.request "/accounts", method: :post, params: {account: account_attributes}
+    @app.request "/accounts.xml", method: :post, params: {account: account_attributes}
   end
 
   it "should be possible to create a billing info for account" do
-    @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes}      
+    @app.request "/accounts/#{account_attributes[:account_code]}/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes}      
     @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -260,12 +260,12 @@ BEGIN
     end
 
     it "should return 404 when trying to update billing inf for non-existent account" do
-      @app.request "/accounts/nonexistent/billing_info", method: :put, params: {billing_info: billing_info_attributes}
+      @app.request "/accounts/nonexistent/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes}
       @app.last_response.status.should eql(404)
     end
 
     it "should return 404 when trying to update billing inf for non-existent account" do
-      @app.request "/accounts/nonexistent/billing_info", method: :put, params: {billing_info: billing_info_attributes}
+      @app.request "/accounts/nonexistent/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -277,7 +277,7 @@ BEGIN
     end
 
     it "should check required fields when billing info provided" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes(first_name: nil, last_name: nil, credit_card: {number: nil})}      
+      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes(first_name: nil, last_name: nil, credit_card: {number: nil})}      
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -291,7 +291,7 @@ BEGIN
     end
 
     it "should check if credit card number is 1 when billing info provided" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes(credit_card: {number: 2})}      
+      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes(credit_card: {number: 2})}      
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -303,8 +303,8 @@ BEGIN
     end
 
     it "should be possible to get billing info for account" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info", method: :put, params: {billing_info: billing_info_attributes}      
-      @app.get "/accounts/#{account_attributes[:account_code]}/billing_info"
+      @app.request "/accounts/#{account_attributes[:account_code]}/billing_info.xml", method: :put, params: {billing_info: billing_info_attributes}      
+      @app.get "/accounts/#{account_attributes[:account_code]}/billing_info.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -334,7 +334,7 @@ BEGIN
     end
 
     it "should be possible to get default billing info for account" do
-      @app.get "/accounts/#{account_attributes[:account_code]}/billing_info"
+      @app.get "/accounts/#{account_attributes[:account_code]}/billing_info.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -367,7 +367,7 @@ BEGIN
   context "subscription plans" do
 
     it "should list all subscription plans that we defined" do
-      @app.get "/company/plans"
+      @app.get "/company/plans.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -424,11 +424,11 @@ BEGIN
 
   context "subscriptions" do
     before :each do
-      @app.request "/accounts", method: :post, params: {account: account_attributes}
+      @app.request "/accounts.xml", method: :post, params: {account: account_attributes}
     end
 
     it "should raise error when you try to create subscription without billing info" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: nil})}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: nil})}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -443,7 +443,7 @@ BEGIN
     end
 
     it "should raise error when you try to create subscription without card info" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -455,7 +455,7 @@ BEGIN
     end
 
     it "should raise error when you try to create subscription without name info" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(first_name: nil, last_name: nil)})}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(first_name: nil, last_name: nil)})}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -468,7 +468,7 @@ BEGIN
     end
 
     it "should raise error when you try to create subscription without card info" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: nil})})}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -480,12 +480,12 @@ BEGIN
     end
 
     it "should return 404 when subscription is not found" do
-      @app.get "/accounts/#{account_attributes[:account_code]}/subscription"
+      @app.get "/accounts/#{account_attributes[:account_code]}/subscription.xml"
       @app.last_response.status.should eql(404)
     end
 
     it "should return message when subscription is not found" do
-      @app.get "/accounts/#{account_attributes[:account_code]}/subscription"
+      @app.get "/accounts/#{account_attributes[:account_code]}/subscription.xml"
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
@@ -497,7 +497,7 @@ BEGIN
     end
 
     it "should create subscription" do
-      @app.request "/accounts/#{account_attributes[:account_code]}/subscription", method: :post, params: {subscription: subscription_attributes}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes}
       @app.last_response.body.should eql(
 <<BEGIN
 <?xml version="1.0"?>
