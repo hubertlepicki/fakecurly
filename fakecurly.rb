@@ -1,6 +1,6 @@
-require 'bundler'
-# This actually requires the bundled gems
-Bundler.require
+require 'sinatra'
+require 'i18n'
+require 'rack/post-body-to-params'
 
 class Fakecurly < Sinatra::Base
   class << self
@@ -22,18 +22,20 @@ class Fakecurly < Sinatra::Base
     super
   end
 
+  set :views, File.join(File.dirname(__FILE__), "lib", 'views')
+
   before do
     headers["Content-Type"] = "application/xml"
   end
 
   get "/clear" do
     Fakecurly.clear
-    "All clear, sailor!"
+    "<ahoy>All clear, sailor!</ahoy>"
   end
 
   post "/company/plans.xml" do
     Fakecurly.plans[params["plan"]["plan_code"]] = params["plan"]
-    "OK, write me"
+    "<todo>OK, write me</todo>"
   end
 
   get "/accounts/:code.xml" do
@@ -106,7 +108,17 @@ class Fakecurly < Sinatra::Base
       not_found(builder :accounts_404)
     end
   end
+  
+  delete "/accounts/:code/subscription.xml" do
+    @account = Fakecurly.accounts[params["code"]]
+    @subscription = Fakecurly.subscriptions[params["code"]]
+    return not_found(builder :subscriptions_404) if @account.nil? || @subscription.nil? 
 
+    Fakecurly.subscriptions[params["code"]] = nil
+    builder :subscriptions_show
+  end
+
+  # TODO: Refactor this monster
   post "/accounts/:code/subscription.xml" do
     @account = Fakecurly.accounts[params["code"]]
     @subscription = params["subscription"] || {}
@@ -130,14 +142,8 @@ class Fakecurly < Sinatra::Base
         @errors << ["billing_info.country", "Billing info.country can't be empty"]
       end
 
-      puts @subscription.inspect
-
-      puts "****** errors: "
-      puts @errors.inspect
       if @subscription["account"]  && @errors.empty?
-        puts "errors are empty :)"
         if @subscription["account"]["billing_info"].nil? || @subscription["account"]["billing_info"]["credit_card"].nil? || @subscription["account"]["billing_info"]["credit_card"]["number"].to_s == "" || @subscription["account"]["billing_info"]["credit_card"]["number"].to_i != 1
-          puts "tu nie wchodzi..."
           @errors << ["billing_info.number", "Billing info.number is not a valid number"]
         end
 
