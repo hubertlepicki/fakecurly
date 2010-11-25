@@ -18,7 +18,7 @@ describe Fakecurly do
       city: "Bialystok",
       state: "Podlaskie",
       country: "Polska",
-      zio: "15-444",
+      zip: "15-444",
       phone: "444444444",
       vat_number: "3333333333",
       ip_address: "127.0.0.1",
@@ -32,17 +32,31 @@ describe Fakecurly do
 
   def subscription_attributes(custom_attributes = {})
     {
-      plan_code: "plan1",
+      plan_code: "aplan",
       account: account_attributes(
          billing_info: billing_info_attributes
        )
     }.merge(custom_attributes)
   end
 
+  def plan_attributes(custom_attributes = {})
+    {
+      plan_code: "aplan",
+      name: "a plan",
+      description: "...and they have a plan",
+      unit_amount_in_cents: 100,
+      setup_fee_in_cents: 0,
+      plan_interval_length: 1,
+      plan_interval_unit: "months",
+      trial_interval_length: 1,
+      trial_interval_unit: "months"
+    }.merge(custom_attributes)
+  end
+
   before :each do
     Fakecurly.plans = {
-      "plan1" => {
-        "plan_code" => "plan1",
+      "aplan" => {
+        "plan_code" => "aplan",
         "name" => "Plan 1",
         "description" => "First plan",
         "unit_amount_in_cents" => 100,
@@ -91,6 +105,13 @@ describe Fakecurly do
       Fakecurly.billing_infos.should be_empty
     end
  
+  end
+
+  context "response content type" do
+    it "should be application/xml" do
+      @app.get "/accounts.xml"
+      @app.last_response.headers["Content-Type"].should eql("application/xml")
+    end
   end
 
   context "creating accounts" do
@@ -373,7 +394,7 @@ BEGIN
 <?xml version="1.0" encoding="UTF-8"?>
 <plans type="array">
   <plan>
-    <plan_code>plan1</plan_code>
+    <plan_code>aplan</plan_code>
     <name>Plan 1</name>
     <description>First plan</description>
     <created_at type="datetime">2010-01-01T00:00:00-00:00</created_at>
@@ -420,6 +441,12 @@ BEGIN
 BEGIN
       )
     end
+
+    it "should be possible to create a subscription plan" do
+      Fakecurly.plans = {}
+      @app.request "/company/plans.xml", method: :post, params: {plan: plan_attributes}
+      Fakecurly.plans.count.should eql(1)
+    end
   end
 
   context "subscriptions" do
@@ -453,6 +480,31 @@ BEGIN
 BEGIN
       )
     end
+
+    it "should raise error when you try to create subscription without card info (empty string)" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: {number: ""})})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.number">Billing info.number is not a valid number</error>
+</errors>
+BEGIN
+      )
+    end
+
+    it "should raise error when you try to create subscription without card info (empty car info)" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(credit_card: nil)})}
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0" encoding="UTF-8"?>
+<errors>
+  <error field="billing_info.number">Billing info.number is not a valid number</error>
+</errors>
+BEGIN
+      )
+    end
+
 
     it "should raise error when you try to create subscription without name info" do
       @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes(account: {billing_info: billing_info_attributes(first_name: nil, last_name: nil)})}
@@ -502,7 +554,7 @@ BEGIN
 <<BEGIN
 <?xml version="1.0"?>
 <subscription>
-  <plan_code>plan1</plan_code>
+  <plan_code>aplan</plan_code>
   <quantity>1</quantity>
   <account>
     <account_code>#{account_attributes[:account_code]}</account_code>
@@ -534,9 +586,66 @@ BEGIN
       )
     end
 
-    it "should be possible to create subscription for account" 
-    it "should get a subscription for account"
-    it "should be possible to update subscription for account"
+    it "should get a subscription for account" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes}
+      @app.get "/accounts/#{account_attributes[:account_code]}/subscription.xml"
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0"?>
+<subscription>
+  <id>#{account_attributes[:account_code]}</id>
+  <account_code>#{account_attributes[:account_code]}</account_code>
+  <plan>
+    <plan_code>aplan</plan_code>
+    <name>Plan 1</name>
+    <version type="integer">1</version>
+  </plan>
+  <state>active</state>
+  <quantity type="integer">1</quantity>
+  <total_amount_in_cents type="integer">100</total_amount_in_cents>
+  <activated_at type="datetime">2010-01-01T00:00:00-00:00</activated_at>
+  <canceled_at type="datetime"></canceled_at>
+  <expires_at type="datetime"></expires_at>
+  <current_period_started_at type="datetime">2010-01-01T00:00:00-00:00</current_period_started_at>
+  <current_period_ends_at type="datetime">2100-01-01T00:00:00-00:00</current_period_ends_at>
+  <trial_started_at type="datetime"></trial_started_at>
+  <trial_ends_at type="datetime"></trial_ends_at>
+</subscription>
+BEGIN
+      )
+    end
+
+
+    it "should be possible to update subscription for account" do
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :post, params: {subscription: subscription_attributes}
+      @app.request "/accounts/#{account_attributes[:account_code]}/subscription.xml", method: :put, params: {subscription: {timeframe: "now", plan_code: "plan2", quantity: 1}}
+      @app.last_response.status.should eql(200)
+      @app.last_response.body.should eql(
+<<BEGIN
+<?xml version="1.0"?>
+<subscription>
+  <id>#{account_attributes[:account_code]}</id>
+  <account_code>#{account_attributes[:account_code]}</account_code>
+  <plan>
+    <plan_code>plan2</plan_code>
+    <name>Plan 2</name>
+    <version type="integer">1</version>
+  </plan>
+  <state>active</state>
+  <quantity type="integer">1</quantity>
+  <total_amount_in_cents type="integer">100</total_amount_in_cents>
+  <activated_at type="datetime">2010-01-01T00:00:00-00:00</activated_at>
+  <canceled_at type="datetime"></canceled_at>
+  <expires_at type="datetime"></expires_at>
+  <current_period_started_at type="datetime">2010-01-01T00:00:00-00:00</current_period_started_at>
+  <current_period_ends_at type="datetime">2100-01-01T00:00:00-00:00</current_period_ends_at>
+  <trial_started_at type="datetime"></trial_started_at>
+  <trial_ends_at type="datetime"></trial_ends_at>
+</subscription>
+BEGIN
+      )
+    end
+
     it "should be possible to cancel subscription"
     it "should be possible to re-activate subscription"
   end
