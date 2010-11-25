@@ -10,5 +10,5 @@ Gem::Specification.new do |gem|
   gem.email    = 'hubert.lepicki@amberbit.com'
   gem.homepage = 'http://github.com/hubertlepicki/fakecurly'
 
-  gem.files = Dir['fakecurly.rb', '{lib,spec}/**/*','README*', 'LICENSE*']
+  gem.files = Dir['{lib,spec}/**/*','README*', 'LICENSE*']
 end

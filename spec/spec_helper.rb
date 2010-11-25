@@ -1,7 +1,7 @@
 ENV["RACK_ENV"] = 'test'
 require 'rspec'
 require 'rack/test'
-require File.join(File.dirname(__FILE__), "..", "fakecurly")
+require File.join(File.dirname(__FILE__), "..", "lib", "fakecurly")
 
 RSpec.configure do |config|
   config.mock_with :rspec

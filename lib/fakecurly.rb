@@ -22,7 +22,7 @@ class Fakecurly < Sinatra::Base
     super
   end
 
-  set :views, File.join(File.dirname(__FILE__), "lib", 'views')
+  set :views, File.join(File.dirname(__FILE__), 'views')
 
   before do
     headers["Content-Type"] = "application/xml"
